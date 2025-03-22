@@ -1,7 +1,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Lock, Shield } from "lucide-react";
+import { Lock } from "lucide-react";
 
 const Header = () => {
   return (
@@ -16,10 +16,11 @@ const Header = () => {
         }}
       >
         <div className="flex items-center space-x-2">
-          <Shield className="h-8 w-8 text-primary" />
-          <h1 className="text-2xl font-medium tracking-tight">
-            Secure<span className="text-primary font-semibold">Enclave</span>
-          </h1>
+          <img 
+            src="/lovable-uploads/bb422bb5-2d39-4fed-80b0-370b9416f988.png" 
+            alt="Eaglys Logo" 
+            className="h-8" 
+          />
         </div>
         
         <div className="flex items-center space-x-1.5 bg-secondary/50 px-3 py-1.5 rounded-full">
