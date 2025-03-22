@@ -1,4 +1,5 @@
-import { toast } from "@/lib/toast";
+
+// No need to import toast in this file as it's not used directly
 
 const API_BASE_URL = "http://localhost:5000/api";
 
