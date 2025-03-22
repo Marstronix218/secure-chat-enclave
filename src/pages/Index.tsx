@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import KeyManagement from "@/components/KeyManagement";
 import ChatInterface from "@/components/ChatInterface";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 
 const Index = () => {
   const [isChatReady, setIsChatReady] = useState(false);

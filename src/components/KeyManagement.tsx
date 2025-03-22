@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 import AnimatedContainer from "./AnimatedContainer";
 import { 
   FolderPlus, Key, Upload, Trash2, Download, Send, RefreshCw, Check

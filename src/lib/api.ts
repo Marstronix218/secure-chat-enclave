@@ -1,5 +1,4 @@
-
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 
 const API_BASE_URL = "http://localhost:5000/api";
 
