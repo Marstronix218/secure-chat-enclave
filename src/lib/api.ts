@@ -1,7 +1,14 @@
 
 // No need to import toast in this file as it's not used directly
 
-const API_BASE_URL = "http://localhost:5000/api";
+// Determine if we're in a development environment or not
+const isDevelopment = window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1';
+
+// Set API base URL based on environment
+const API_BASE_URL = isDevelopment 
+  ? "http://localhost:5000/api"  // Use localhost in development
+  : "https://eaglys-tee-demo-api.onrender.com/api";  // Use a deployed API in production
 
 // Base API request function
 async function fetchApi(endpoint: string, options: RequestInit = {}) {

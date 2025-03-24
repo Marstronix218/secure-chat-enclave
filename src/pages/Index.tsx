@@ -1,18 +1,27 @@
+
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import KeyManagement from "@/components/KeyManagement";
 import ChatInterface from "@/components/ChatInterface";
 import { toast } from "@/lib/toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 const Index = () => {
   const [isChatReady, setIsChatReady] = useState(false);
+  const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   
   // Simulate checking if keys are set up correctly
   useEffect(() => {
     // In a real app, this would check the key status from the backend
     // For now, we'll just have KeyManagement component manage this
-  }, []);
+    
+    // Show environment information
+    if (!isDevelopment) {
+      toast.info("Running in production mode with remote API server");
+    }
+  }, [isDevelopment]);
   
   const handleClearChat = () => {
     // This would be handled by the ChatInterface
@@ -29,6 +38,15 @@ const Index = () => {
       <Header />
       
       <main className="container mx-auto py-6 px-4">
+        {!isDevelopment && (
+          <Alert className="mb-4">
+            <InfoIcon className="h-4 w-4 mr-2" />
+            <AlertDescription>
+              This demo is using a remote API server. All keys are temporary and will be deleted periodically.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-4">
           <motion.div
             initial={{ x: -20, opacity: 0 }}
