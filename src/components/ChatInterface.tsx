@@ -35,6 +35,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
     scrollToBottom();
   }, [messages]);
 
+  // Add a welcome message when component mounts
+  useEffect(() => {
+    if (messages.length === 0) {
+      const welcomeMessage: Message = {
+        role: "assistant",
+        content: "Hello! I'm the Eaglys secure enclave assistant. How can I help you today?",
+        timestamp: new Date()
+      };
+      setMessages([welcomeMessage]);
+    }
+  }, [messages.length]);
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -115,6 +127,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
         toast.error(response.message || "Failed to process message");
         setCurrentStep(0);
         setIsLoading(false);
+        
+        // Add a fallback response even when there's an error
+        const fallbackMessage: Message = {
+          role: "assistant",
+          content: "I'm sorry, but I encountered an issue processing your request. Please try again later.",
+          timestamp: new Date()
+        };
+        setMessages((prev) => [...prev, fallbackMessage]);
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -123,14 +143,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
       setIsLoading(false);
       
       // Even when there's an error, show a fallback response for demo purposes
-      setTimeout(() => {
-        const fallbackMessage: Message = {
-          role: "assistant",
-          content: `I apologize, but I'm having trouble processing your request due to API connectivity issues. This is a simulated response for demonstration purposes.`,
-          timestamp: new Date()
-        };
-        setMessages((prev) => [...prev, fallbackMessage]);
-      }, 1000);
+      const fallbackMessage: Message = {
+        role: "assistant",
+        content: `I apologize, but I'm having trouble processing your request due to API connectivity issues. This is a simulated response for demonstration purposes.`,
+        timestamp: new Date()
+      };
+      setMessages((prev) => [...prev, fallbackMessage]);
     }
   };
 
