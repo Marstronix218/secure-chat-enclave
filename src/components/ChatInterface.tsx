@@ -14,6 +14,7 @@ export interface Message {
   role: "user" | "assistant" | "encrypted" | "decrypted";
   content: string;
   timestamp: Date;
+  simulated?: boolean;
 }
 
 interface ChatInterfaceProps {
@@ -72,27 +73,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
       // Step 1: Encrypt prompt with Key A (public)
       setTimeout(() => setCurrentStep(2), 800);
       
-      // Since the actual API might be failing in production, let's handle it gracefully
-      let response;
-      try {
-        response = await encryptAndSendPrompt(inputValue);
-      } catch (error) {
-        console.error("API call failed:", error);
-        // Fallback response for demo purposes when API is unreachable
-        response = {
-          success: true,
-          encryptedPrompt: "ENCRYPTED-TEXT-" + Math.random().toString(36).substring(2, 15),
-          encryptedResponse: "ENCRYPTED-RESPONSE-" + Math.random().toString(36).substring(2, 15),
-          decryptedResponse: `I'm a simulated response since the actual API is currently unavailable. You asked: "${inputValue}"`
-        };
-      }
+      const response = await encryptAndSendPrompt(inputValue);
       
       if (response.success) {
         // Step 2: Show encrypted text
         const encryptedMessage: Message = {
           role: "encrypted",
           content: response.encryptedPrompt,
-          timestamp: new Date()
+          timestamp: new Date(),
+          simulated: response.isSimulated
         };
         
         setMessages((prev) => [...prev, encryptedMessage]);
@@ -105,7 +94,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
         const encryptedResponseMessage: Message = {
           role: "encrypted",
           content: response.encryptedResponse,
-          timestamp: new Date()
+          timestamp: new Date(),
+          simulated: response.isSimulated
         };
         
         setMessages((prev) => [...prev, encryptedResponseMessage]);
@@ -116,37 +106,44 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
           const assistantMessage: Message = {
             role: "assistant",
             content: response.decryptedResponse,
-            timestamp: new Date()
+            timestamp: new Date(),
+            simulated: response.isSimulated
           };
           
           setMessages((prev) => [...prev, assistantMessage]);
           setCurrentStep(0);
           setIsLoading(false);
+          
+          if (response.isSimulated) {
+            toast.info("Using simulated responses due to API connectivity issues");
+          }
         }, 800);
       } else {
         toast.error(response.message || "Failed to process message");
         setCurrentStep(0);
         setIsLoading(false);
         
-        // Add a fallback response even when there's an error
+        // Add a fallback response for errors
         const fallbackMessage: Message = {
           role: "assistant",
-          content: "I'm sorry, but I encountered an issue processing your request. Please try again later.",
-          timestamp: new Date()
+          content: response.decryptedResponse || "I'm sorry, but I encountered an issue processing your request. Please try again later.",
+          timestamp: new Date(),
+          simulated: true
         };
         setMessages((prev) => [...prev, fallbackMessage]);
       }
     } catch (error) {
       console.error("Error sending message:", error);
-      toast.error("Error sending message. Please try again.");
+      toast.error("Error sending message. Using simulated response instead.");
       setCurrentStep(0);
       setIsLoading(false);
       
-      // Even when there's an error, show a fallback response for demo purposes
+      // Fallback response for unhandled errors
       const fallbackMessage: Message = {
         role: "assistant",
-        content: `I apologize, but I'm having trouble processing your request due to API connectivity issues. This is a simulated response for demonstration purposes.`,
-        timestamp: new Date()
+        content: `I apologize, but I'm having trouble connecting to the secure enclave. This is a simulated response for demonstration purposes. You asked: "${inputValue}"`,
+        timestamp: new Date(),
+        simulated: true
       };
       setMessages((prev) => [...prev, fallbackMessage]);
     }
@@ -190,6 +187,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
                 role={message.role}
                 content={message.content}
                 timestamp={message.timestamp}
+                simulated={message.simulated}
               />
             ))}
             <div ref={messagesEndRef} />

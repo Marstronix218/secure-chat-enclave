@@ -2,12 +2,13 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { User, Bot, Lock } from "lucide-react";
+import { User, Bot, Lock, AlertTriangle } from "lucide-react";
 
 interface ChatMessageProps {
   role: "user" | "assistant" | "encrypted" | "decrypted";
   content: string;
   timestamp: Date;
+  simulated?: boolean;
 }
 
 const roleIcons = {
@@ -24,7 +25,7 @@ const roleLabels = {
   decrypted: "Decrypted"
 };
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ role, content, timestamp }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ role, content, timestamp, simulated }) => {
   const isCode = role === "encrypted";
   
   const getMessageStyles = () => {
@@ -57,8 +58,16 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ role, content, timestamp }) =
         <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
           {roleIcons[role]}
         </div>
-        <div>
-          <p className="text-sm font-medium">{roleLabels[role]}</p>
+        <div className="flex-1">
+          <div className="flex items-center space-x-2">
+            <p className="text-sm font-medium">{roleLabels[role]}</p>
+            {simulated && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Simulated
+              </span>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">
             {timestamp.toLocaleTimeString()}
           </p>
