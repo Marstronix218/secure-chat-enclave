@@ -5,12 +5,14 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from Crypto.PublicKey import RSA
 from utils import encrypt_by_chunk, decrypt_by_chunk, RSA_KEY_SIZE
+import requests
+import base64
 
 app = Flask(__name__)
 CORS(app)
 
 # Constants
-KEY_DIRECTORY = "/tmp/secure_chat_keys"
+KEY_DIRECTORY = "/home/ec2-user/environment/tee_control_plane/keys"
 
 # Create key directory if it doesn't exist
 if not os.path.exists(KEY_DIRECTORY):
@@ -32,18 +34,20 @@ def create_key_directory():
             "message": f"Failed to create directory: {str(e)}"
         }), 500
 
+
 @app.route('/api/retrieve_server_key', methods=['GET'])
-def retrieve_server_key():
-    """Simulates retrieving the server's public key."""
+def api_get_server_key():
+    if not os.path.exists(KEY_DIRECTORY):
+        return jsonify({"success": False, "message": "最初にキーディレクトリを作成してください。"})
+
     try:
-        # In a real application, this would make a vSock request to the Nitro Enclave
-        # For demo purposes, we'll generate a server key locally
-        server_key = RSA.generate(RSA_KEY_SIZE)
+        response = requests.get("http://57.182.161.85:5000/get_server_pubkey")
+        server_pubkey_pem = response.json()["server_pubkey"]
+        server_pubkey = RSA.import_key(server_pubkey_pem)
         file_path = os.path.join(KEY_DIRECTORY, "server_key.bin")
-        
         with open(file_path, "wb") as f:
-            f.write(server_key.export_key())
-            
+            f.write(server_pubkey.export_key())
+
         return jsonify({
             "status": "success",
             "message": "Server public key retrieved and saved to server_key.bin."
@@ -53,6 +57,7 @@ def retrieve_server_key():
             "status": "error",
             "message": f"Failed to retrieve server key: {str(e)}"
         }), 500
+
 
 @app.route('/api/generate_key', methods=['POST'])
 def generate_key():
@@ -133,13 +138,15 @@ def send_encrypted_key_a():
                 "status": "error",
                 "message": "Encrypted Key A not found."
             }), 404
-            
-        # In a real application, this would send the encrypted key to the Nitro Enclave
-        # For demo purposes, we'll just acknowledge the request
+
+        with open(encrypted_key_path, "rb") as pk_file:
+            encrypted_key_bytes = pk_file.read()
+            encrypted_key_b64 = base64.b64encode(encrypted_key_bytes).decode("utf-8")
         
         return jsonify({
             "status": "success",
-            "message": "Encrypted Key A sent to the TEE successfully."
+            "message": "Encrypted Key A sent to the TEE successfully.",
+            "encrypted_seckey_a": encrypted_key_b64
         })
     except Exception as e:
         return jsonify({
@@ -159,12 +166,13 @@ def send_public_key_b():
                 "message": "Key B public key not found."
             }), 404
             
-        # In a real application, this would send the public key to the Nitro Enclave
-        # For demo purposes, we'll just acknowledge the request
-        
+        with open(public_key_b_path, "rb") as pk_file:
+            public_key_b = pk_file.read().decode("utf-8")
+
         return jsonify({
             "status": "success",
-            "message": "Key B (public) sent to the TEE successfully."
+            "message": "Key B (public) sent to the TEE successfully.",
+            "pubkey_b": public_key_b
         })
     except Exception as e:
         return jsonify({
@@ -255,12 +263,14 @@ def encrypt_prompt():
             
         with open(key_a_public_path, "rb") as f:
             key_a_public = f.read()
-            
-        encrypted_prompt = encrypt_by_chunk(prompt.encode("utf-8"), key_a_public)
         
+        # 暗号化してバイナリ
+        encrypted_prompt = encrypt_by_chunk(prompt.encode("utf-8"), key_a_public)
+        encrypted_b64 = base64.b64encode(encrypted_prompt).decode("utf-8")
+
         return jsonify({
             "status": "success",
-            "encrypted_prompt": encrypted_prompt
+            "encrypted_prompt": encrypted_b64
         })
     except Exception as e:
         return jsonify({
@@ -270,62 +280,45 @@ def encrypt_prompt():
 
 @app.route('/api/generate_text', methods=['POST'])
 def generate_text():
-    """Simulate the TEE processing the encrypted prompt and returning an encrypted response."""
+    """Forward encrypted prompt to Data Plane to process via TEE."""
     try:
         data = request.json
         encrypted_prompt = data.get('encrypted_prompt')
-        
+
         if not encrypted_prompt:
             return jsonify({
                 "status": "error",
                 "message": "Encrypted prompt is required."
             }), 400
-            
-        # In a real application, this would be sent to the Nitro Enclave
-        # Here we simulate decryption with Key A private, processing, and encryption with Key B public
-        
-        # For simplicity, we'll just create a mock response that depends on the hash of the input
-        import hashlib
-        
-        # Create a hash of the encrypted prompt to deterministically generate a response
-        hash_obj = hashlib.md5(str(encrypted_prompt).encode())
-        hash_digest = hash_obj.hexdigest()
-        
-        # Generate a mock response based on the hash
-        responses = [
-            "I'm processing your request securely within the TEE environment.",
-            "Your encrypted message has been processed. All operations occurred in the secure enclave.",
-            "The data you provided was handled with end-to-end encryption throughout.",
-            "I've analyzed your input while maintaining complete confidentiality.",
-            "Your request was processed in an isolated trusted execution environment for maximum security."
-        ]
-        
-        # Use the hash to select a response
-        response_index = int(hash_digest, 16) % len(responses)
-        response_text = responses[response_index]
-        
-        # Now "encrypt" the response with Key B public key
-        key_b_public_path = os.path.join(KEY_DIRECTORY, "key_b_public.pem")
-        
-        if not os.path.exists(key_b_public_path):
+
+        # Data Plane に転送
+        DATA_PLANE_URL = "http://57.182.161.85:5000/generate_text"
+
+        response = requests.post(
+            DATA_PLANE_URL,
+            json={"encrypted_prompt": encrypted_prompt},
+            timeout=10
+        )
+
+        if response.status_code != 200:
             return jsonify({
                 "status": "error",
-                "message": "Key B public key not found."
-            }), 404
-            
-        with open(key_b_public_path, "rb") as f:
-            key_b_public = f.read()
-            
-        encrypted_response = encrypt_by_chunk(response_text.encode("utf-8"), key_b_public)
-        
+                "message": "Failed to process encrypted prompt in TEE.",
+                "details": response.text
+            }), 500
+
+        # Base64でフロントに返す
+        encrypted_bytes = response.content
+        encrypted_b64 = base64.b64encode(encrypted_bytes).decode("utf-8")
+
         return jsonify({
             "status": "success",
-            "encrypted_response": encrypted_response
+            "encrypted_response": encrypted_b64
         })
     except Exception as e:
         return jsonify({
             "status": "error",
-            "message": f"Failed to generate text: {str(e)}"
+            "message": f"Failed to communicate with TEE: {str(e)}"
         }), 500
 
 @app.route('/api/decrypt_response', methods=['POST'])
@@ -333,14 +326,17 @@ def decrypt_response():
     """Decrypt the response using Key B private key."""
     try:
         data = request.json
-        encrypted_response = data.get('encrypted_response')
-        
-        if not encrypted_response:
+        encrypted_b64 = data.get('encrypted_response')
+
+        if not encrypted_b64:
             return jsonify({
                 "status": "error",
                 "message": "Encrypted response is required."
             }), 400
-            
+
+        # Base64 → bytes
+        encrypted_response = base64.b64decode(encrypted_b64)
+        
         key_b_private_path = os.path.join(KEY_DIRECTORY, "key_b_private.pem")
         
         if not os.path.exists(key_b_private_path):
@@ -365,4 +361,4 @@ def decrypt_response():
         }), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=8501)

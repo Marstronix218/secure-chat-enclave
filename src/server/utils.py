@@ -1,125 +1,78 @@
+import socket
+import struct
 
-from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
-from Crypto.Util.Padding import pad, unpad
-import base64
+from Crypto.Hash import SHA256
+from Crypto.PublicKey import RSA
 
-# Constants
 RSA_KEY_SIZE = 2048
+MAX_ENCRYPT_CHUNK_SIZE = (RSA_KEY_SIZE // 8) - 2 * (256 // 8) - 2
 
-def encrypt_by_chunk(data, public_key_data):
-    """
-    Encrypt data using RSA public key with chunking for larger data.
-    
-    Args:
-        data (bytes): Data to encrypt
-        public_key_data (bytes): RSA public key in binary format
-    
-    Returns:
-        bytes: Base64-encoded encrypted data
-    """
-    try:
-        public_key = RSA.import_key(public_key_data)
-        cipher = PKCS1_OAEP.new(public_key)
-        
-        # Calculate chunk size (key size in bytes - 42 bytes for PKCS#1 OAEP padding)
-        key_size_bytes = public_key.size_in_bytes()
-        chunk_size = key_size_bytes - 42
-        
-        # Process data in chunks
-        encrypted_chunks = []
-        for i in range(0, len(data), chunk_size):
-            chunk = data[i:i+chunk_size]
-            encrypted_chunk = cipher.encrypt(chunk)
-            encrypted_chunks.append(encrypted_chunk)
-        
-        # Combine chunks and encode as base64
-        encrypted_data = b''.join(encrypted_chunks)
-        return base64.b64encode(encrypted_data)
-    
-    except Exception as e:
-        print(f"Encryption error: {e}")
-        raise
 
-def decrypt_by_chunk(encrypted_data, private_key_data):
-    """
-    Decrypt data using RSA private key with chunking for larger data.
-    
-    Args:
-        encrypted_data (bytes or str): Base64-encoded encrypted data
-        private_key_data (bytes): RSA private key in binary format
-    
-    Returns:
-        bytes: Decrypted data
-    """
-    try:
-        # Handle string input for encrypted_data
-        if isinstance(encrypted_data, str):
-            encrypted_data = encrypted_data.encode('utf-8')
-        
-        # Decode from base64
-        encrypted_data = base64.b64decode(encrypted_data)
-        
-        private_key = RSA.import_key(private_key_data)
-        cipher = PKCS1_OAEP.new(private_key)
-        
-        # Calculate chunk size (key size in bytes)
-        key_size_bytes = private_key.size_in_bytes()
-        
-        # Process data in chunks
-        decrypted_chunks = []
-        for i in range(0, len(encrypted_data), key_size_bytes):
-            chunk = encrypted_data[i:i+key_size_bytes]
-            decrypted_chunk = cipher.decrypt(chunk)
-            decrypted_chunks.append(decrypted_chunk)
-        
-        # Combine chunks
-        return b''.join(decrypted_chunks)
-    
-    except Exception as e:
-        print(f"Decryption error: {e}")
-        raise
+def send_data(sock: socket.socket, data: bytes):
+    data_length = len(data)
+    sock.sendall(struct.pack("!I", data_length))
+    sock.sendall(data)
 
-# Additional utility functions
-def generate_key_pair(key_size=RSA_KEY_SIZE):
-    """
-    Generate a new RSA key pair.
-    
-    Args:
-        key_size (int): Size of the RSA key in bits
-    
-    Returns:
-        tuple: (private_key, public_key) as RSA key objects
-    """
-    key = RSA.generate(key_size)
-    private_key = key
-    public_key = key.publickey()
-    return private_key, public_key
 
-def export_key(key, is_private=True):
-    """
-    Export an RSA key to bytes.
-    
-    Args:
-        key: RSA key object
-        is_private (bool): Whether the key is private
-    
-    Returns:
-        bytes: Exported key data
-    """
-    if is_private:
-        return key.export_key()
-    else:
-        return key.publickey().export_key()
+def recv_data(sock: socket.socket) -> bytes:
+    raw_msglen = recv_all(sock, 4)
+    if not raw_msglen:
+        return None
+    msglen = struct.unpack("!I", raw_msglen)[0]
 
-def import_key(key_data):
+    return recv_all(sock, msglen)
+
+
+def recv_all(sock: socket.socket, n: int) -> bytes:
+    data = b""
+    while len(data) < n:
+        packet = sock.recv(n - len(data))
+        if not packet:
+            return None
+        data += packet
+    return data
+
+
+def encrypt_by_chunk(data_to_encrypt: bytes, pubkey: bytes) -> bytes:
     """
-    Import an RSA key from bytes.
-    
-    Args:
-        key_data (bytes): Key data
-    
-    Returns:
-        RSA key object
+    Encrypt arbitrary size of data with RSA and OAEP (padding scheme)
+
+    :param data_to_encrypt: data to be encrypted
+    :type data_to_encrypt: bytes, required
+    :param pubkey: RSA public key to encrypt the data with
+    :type pubkey: bytes, required
+    :return: encrypted data appended together
+    :rtype: bytes
     """
-    return RSA.import_key(key_data)
+    public_key = RSA.import_key(pubkey)
+    cipher_rsa = PKCS1_OAEP.new(public_key, SHA256)
+
+    result = b""
+    for i in range(0, len(data_to_encrypt), MAX_ENCRYPT_CHUNK_SIZE):
+        chunk_to_encrypt = data_to_encrypt[i : i + MAX_ENCRYPT_CHUNK_SIZE]
+        result += cipher_rsa.encrypt(chunk_to_encrypt)
+
+    return result
+
+
+def decrypt_by_chunk(data_to_decrypt: bytes, seckey: bytes) -> bytes:
+    """
+    Decrypt arbitrary size of data with RSA and OAEP
+
+    :param data_to_decrypt: data to be decrypted
+    :type data_to_decrypt: bytes, required
+    :param seckey: RSA secret key to decrypt data with
+    :type seckey: bytes
+    :return: decrypted data encoded into bytes sequence using utf-8
+    :rtype: bytes
+    """
+    private_key = RSA.import_key(seckey)
+    cipher_rsa = PKCS1_OAEP.new(private_key, SHA256)
+
+    result = b""
+    for i in range(0, len(data_to_decrypt), RSA_KEY_SIZE // 8):
+        chunk_to_decrypt = data_to_decrypt[i : i + (RSA_KEY_SIZE // 8)]
+        result += cipher_rsa.decrypt(chunk_to_decrypt)
+
+    return result

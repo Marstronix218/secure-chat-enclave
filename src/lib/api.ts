@@ -1,13 +1,6 @@
-// No need to import toast in this file as it's not used directly
+// import { toast } from "@/lib/toast";
 
-// Determine if we're in a development environment or not
-const isDevelopment = window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1';
-
-// Set API base URL based on environment
-const API_BASE_URL = isDevelopment 
-  ? "http://localhost:5000/api"  // Use localhost in development
-  : "https://eaglys-tee-demo-api.onrender.com/api";  // Use a deployed API in production
+const API_BASE_URL = "http://52.194.95.181:8501/api";     // set elastic public ip url for the control plane
 
 // Base API request function
 async function fetchApi(endpoint: string, options: RequestInit = {}) {
@@ -21,29 +14,11 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
     });
 
     if (!response.ok) {
-      // Try to get error message from response
-      try {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Error: ${response.status}`);
-      } catch (parseError) {
-        // If we can't parse the error response, just use the status
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
-      }
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Error: ${response.status}`);
     }
 
-    // For empty responses, return an empty object rather than trying to parse
-    if (response.headers.get('content-length') === '0' || 
-        response.status === 204) {
-      return { success: true };
-    }
-
-    // Safely parse JSON response, handle empty or invalid JSON
-    try {
-      return await response.json();
-    } catch (jsonError) {
-      console.error("Failed to parse JSON response:", jsonError);
-      return { success: true, message: "Operation completed but no valid JSON returned" };
-    }
+    return await response.json();
   } catch (error) {
     console.error(`API Error (${endpoint}):`, error);
     throw error;
@@ -149,90 +124,44 @@ export async function deleteAllKeys() {
 // Encrypt and send prompt to TEE
 export async function encryptAndSendPrompt(prompt: string) {
   try {
-    // If API is unreachable, we'll simulate the responses for demo purposes
-    let isSimulated = false;
-    let encryptResult;
-    
-    try {
-      encryptResult = await fetchApi('encrypt_prompt', {
-        method: 'POST',
-        body: JSON.stringify({ prompt }),
-      });
-    } catch (error) {
-      console.log("API unreachable, using simulated response");
-      isSimulated = true;
-      encryptResult = {
-        success: true,
-        encrypted_prompt: "SIMULATED-ENCRYPTED-" + Math.random().toString(36).substring(2, 10)
-      };
-    }
-    
-    const { encrypted_prompt } = encryptResult;
-    
-    // Send encrypted prompt to TEE and get encrypted response
-    let responseResult;
-    try {
-      if (!isSimulated) {
-        responseResult = await fetchApi('generate_text', {
-          method: 'POST',
-          body: JSON.stringify({ encrypted_prompt }),
-        });
-      } else {
-        responseResult = {
-          success: true,
-          encrypted_response: "SIMULATED-RESPONSE-" + Math.random().toString(36).substring(2, 10)
-        };
-      }
-    } catch (error) {
-      console.log("API unreachable for text generation, using simulated response");
-      isSimulated = true;
-      responseResult = {
-        success: true,
-        encrypted_response: "SIMULATED-RESPONSE-" + Math.random().toString(36).substring(2, 10)
-      };
-    }
-    
-    const { encrypted_response } = responseResult;
-    
-    // Decrypt the response
-    let decryptResult;
-    try {
-      if (!isSimulated) {
-        decryptResult = await fetchApi('decrypt_response', {
-          method: 'POST',
-          body: JSON.stringify({ encrypted_response }),
-        });
-      } else {
-        decryptResult = {
-          success: true,
-          decrypted_response: `This is a simulated response since the API is currently unavailable. You asked: "${prompt}"\n\nIn a real implementation, this response would be genuinely processed within a Trusted Execution Environment (TEE).`
-        };
-      }
-    } catch (error) {
-      console.log("API unreachable for decryption, using simulated response");
-      decryptResult = {
-        success: true,
-        decrypted_response: `This is a simulated response since the API is currently unavailable. You asked: "${prompt}"\n\nIn a real implementation, this response would be genuinely processed within a Trusted Execution Environment (TEE).`
-      };
-    }
-    
+    // Step 1: Encrypt prompt with Key A
+    const encryptRes = await fetch("http://52.194.95.181:8080/api/encrypt_prompt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+    const encryptData = await encryptRes.json();
+    if (!encryptData.success && !encryptData.encrypted_prompt) throw new Error(encryptData.message);
+
+    const encryptedPrompt = encryptData.encrypted_prompt;
+
+    // Step 2: Generate text in the TEE (Data Plane)
+    const generateRes = await fetch("http://57.182.161.85:5000/generate_text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ encrypted_prompt: encryptedPrompt }),
+    });
+    const encryptedResponse = await generateRes.arrayBuffer(); // bytes
+
+    // Step 3: Decrypt response
+    const decryptRes = await fetch("http://52.194.95.181:8080/api/decrypt_response", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ encrypted_response: Array.from(new Uint8Array(encryptedResponse)) }), // convert to array of numbers
+    });
+    const decryptData = await decryptRes.json();
+
+    if (!decryptData.success && !decryptData.decrypted_response) throw new Error(decryptData.message);
+
     return {
       success: true,
-      encryptedPrompt: encrypted_prompt,
-      encryptedResponse: encrypted_response,
-      decryptedResponse: decryptResult.decrypted_response,
-      isSimulated: isSimulated
+      encryptedPrompt: "[Encrypted Prompt]",
+      encryptedResponse: "[Encrypted Response]",
+      decryptedResponse: decryptData.decrypted_response,
     };
-  } catch (error) {
-    console.error("Failed to process chat message:", error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : "Unknown error",
-      encryptedPrompt: "ERROR-ENCRYPTED",
-      encryptedResponse: "ERROR-RESPONSE",
-      decryptedResponse: `I apologize, but I encountered an error processing your message. This is likely due to API connectivity issues. Your message was: "${prompt}"`,
-      isSimulated: true
-    };
+  } catch (err: any) {
+    console.error(err);
+    return { success: false, message: err.message };
   }
 }
 

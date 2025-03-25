@@ -14,7 +14,6 @@ export interface Message {
   role: "user" | "assistant" | "encrypted" | "decrypted";
   content: string;
   timestamp: Date;
-  simulated?: boolean;
 }
 
 interface ChatInterfaceProps {
@@ -35,18 +34,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Add a welcome message when component mounts
-  useEffect(() => {
-    if (messages.length === 0) {
-      const welcomeMessage: Message = {
-        role: "assistant",
-        content: "Hello! I'm the Eaglys secure enclave assistant. How can I help you today?",
-        timestamp: new Date()
-      };
-      setMessages([welcomeMessage]);
-    }
-  }, [messages.length]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,8 +67,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
         const encryptedMessage: Message = {
           role: "encrypted",
           content: response.encryptedPrompt,
-          timestamp: new Date(),
-          simulated: response.isSimulated
+          timestamp: new Date()
         };
         
         setMessages((prev) => [...prev, encryptedMessage]);
@@ -94,8 +80,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
         const encryptedResponseMessage: Message = {
           role: "encrypted",
           content: response.encryptedResponse,
-          timestamp: new Date(),
-          simulated: response.isSimulated
+          timestamp: new Date()
         };
         
         setMessages((prev) => [...prev, encryptedResponseMessage]);
@@ -106,46 +91,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
           const assistantMessage: Message = {
             role: "assistant",
             content: response.decryptedResponse,
-            timestamp: new Date(),
-            simulated: response.isSimulated
+            timestamp: new Date()
           };
           
           setMessages((prev) => [...prev, assistantMessage]);
           setCurrentStep(0);
           setIsLoading(false);
-          
-          if (response.isSimulated) {
-            toast.info("Using simulated responses due to API connectivity issues");
-          }
         }, 800);
       } else {
         toast.error(response.message || "Failed to process message");
         setCurrentStep(0);
         setIsLoading(false);
-        
-        // Add a fallback response for errors
-        const fallbackMessage: Message = {
-          role: "assistant",
-          content: response.decryptedResponse || "I'm sorry, but I encountered an issue processing your request. Please try again later.",
-          timestamp: new Date(),
-          simulated: true
-        };
-        setMessages((prev) => [...prev, fallbackMessage]);
       }
     } catch (error) {
       console.error("Error sending message:", error);
-      toast.error("Error sending message. Using simulated response instead.");
+      toast.error("Error sending message. Please try again.");
       setCurrentStep(0);
       setIsLoading(false);
-      
-      // Fallback response for unhandled errors
-      const fallbackMessage: Message = {
-        role: "assistant",
-        content: `I apologize, but I'm having trouble connecting to the secure enclave. This is a simulated response for demonstration purposes. You asked: "${inputValue}"`,
-        timestamp: new Date(),
-        simulated: true
-      };
-      setMessages((prev) => [...prev, fallbackMessage]);
     }
   };
 
@@ -187,7 +149,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
                 role={message.role}
                 content={message.content}
                 timestamp={message.timestamp}
-                simulated={message.simulated}
               />
             ))}
             <div ref={messagesEndRef} />
