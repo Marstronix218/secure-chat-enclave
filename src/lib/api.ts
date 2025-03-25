@@ -1,3 +1,4 @@
+
 // import { toast } from "@/lib/toast";
 
 const API_BASE_URL = "http://52.194.95.181:8501/api";     // set elastic public ip url for the control plane
@@ -14,11 +15,18 @@ async function fetchApi(endpoint: string, options: RequestInit = {}) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Error: ${response.status}`);
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error: ${response.status}`);
+      } catch (jsonError) {
+        // If JSON parsing fails, use status text
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+      }
     }
 
-    return await response.json();
+    // Safely parse JSON - handle empty responses
+    const text = await response.text();
+    return text ? JSON.parse(text) : {};
   } catch (error) {
     console.error(`API Error (${endpoint}):`, error);
     throw error;
@@ -130,8 +138,23 @@ export async function encryptAndSendPrompt(prompt: string) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt }),
     });
-    const encryptData = await encryptRes.json();
-    if (!encryptData.success && !encryptData.encrypted_prompt) throw new Error(encryptData.message);
+    
+    if (!encryptRes.ok) {
+      throw new Error(`Encryption error: ${encryptRes.status} ${encryptRes.statusText}`);
+    }
+    
+    let encryptData;
+    try {
+      const text = await encryptRes.text();
+      encryptData = text ? JSON.parse(text) : {};
+    } catch (e) {
+      console.error("Failed to parse encryption response:", e);
+      throw new Error("Invalid response from encryption service");
+    }
+    
+    if (!encryptData.success && !encryptData.encrypted_prompt) {
+      throw new Error(encryptData.message || "Failed to encrypt prompt");
+    }
 
     const encryptedPrompt = encryptData.encrypted_prompt;
 
@@ -141,7 +164,18 @@ export async function encryptAndSendPrompt(prompt: string) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ encrypted_prompt: encryptedPrompt }),
     });
-    const encryptedResponse = await generateRes.arrayBuffer(); // bytes
+    
+    if (!generateRes.ok) {
+      throw new Error(`TEE error: ${generateRes.status} ${generateRes.statusText}`);
+    }
+    
+    let encryptedResponse;
+    try {
+      encryptedResponse = await generateRes.arrayBuffer(); // bytes
+    } catch (e) {
+      console.error("Failed to get response from TEE:", e);
+      throw new Error("Invalid response from TEE service");
+    }
 
     // Step 3: Decrypt response
     const decryptRes = await fetch("http://52.194.95.181:8080/api/decrypt_response", {
@@ -149,9 +183,23 @@ export async function encryptAndSendPrompt(prompt: string) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ encrypted_response: Array.from(new Uint8Array(encryptedResponse)) }), // convert to array of numbers
     });
-    const decryptData = await decryptRes.json();
+    
+    if (!decryptRes.ok) {
+      throw new Error(`Decryption error: ${decryptRes.status} ${decryptRes.statusText}`);
+    }
+    
+    let decryptData;
+    try {
+      const text = await decryptRes.text();
+      decryptData = text ? JSON.parse(text) : {};
+    } catch (e) {
+      console.error("Failed to parse decryption response:", e);
+      throw new Error("Invalid response from decryption service");
+    }
 
-    if (!decryptData.success && !decryptData.decrypted_response) throw new Error(decryptData.message);
+    if (!decryptData.success && !decryptData.decrypted_response) {
+      throw new Error(decryptData.message || "Failed to decrypt response");
+    }
 
     return {
       success: true,
@@ -160,8 +208,15 @@ export async function encryptAndSendPrompt(prompt: string) {
       decryptedResponse: decryptData.decrypted_response,
     };
   } catch (err: any) {
-    console.error(err);
-    return { success: false, message: err.message };
+    console.error("Chat processing error:", err);
+    return { 
+      success: false, 
+      message: err.message || "Failed to process message",
+      // Provide fallback data for UI display
+      encryptedPrompt: "[Encrypted Prompt]",
+      encryptedResponse: "[Encrypted Response]",
+      decryptedResponse: "I'm sorry, I couldn't process your message due to a connection issue. Please try again or check your network connection."
+    };
   }
 }
 

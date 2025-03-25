@@ -14,6 +14,7 @@ export interface Message {
   role: "user" | "assistant" | "encrypted" | "decrypted";
   content: string;
   timestamp: Date;
+  simulated?: boolean;
 }
 
 interface ChatInterfaceProps {
@@ -26,6 +27,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Add a welcome message when the component loads
+  useEffect(() => {
+    if (messages.length === 0) {
+      setMessages([
+        {
+          role: "assistant",
+          content: "Hello! I'm your secure TEE-protected assistant. How can I help you today?",
+          timestamp: new Date(),
+          simulated: false
+        }
+      ]);
+    }
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -62,49 +77,74 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
       
       const response = await encryptAndSendPrompt(inputValue);
       
-      if (response.success) {
-        // Step 2: Show encrypted text
-        const encryptedMessage: Message = {
-          role: "encrypted",
-          content: response.encryptedPrompt,
-          timestamp: new Date()
+      // Always show encrypted messages - either real or simulated
+      const encryptedMessage: Message = {
+        role: "encrypted",
+        content: response.encryptedPrompt,
+        timestamp: new Date(),
+        simulated: !response.success
+      };
+      
+      setMessages((prev) => [...prev, encryptedMessage]);
+      setTimeout(() => setCurrentStep(3), 800);
+      
+      // Step 3: Process in TEE (waiting)
+      setTimeout(() => setCurrentStep(4), 1600);
+      
+      // Step 4: Get encrypted response
+      const encryptedResponseMessage: Message = {
+        role: "encrypted",
+        content: response.encryptedResponse,
+        timestamp: new Date(),
+        simulated: !response.success
+      };
+      
+      setMessages((prev) => [...prev, encryptedResponseMessage]);
+      setTimeout(() => setCurrentStep(5), 800);
+      
+      // Step 5: Decrypt response with Key B (private)
+      setTimeout(() => {
+        const assistantMessage: Message = {
+          role: "assistant",
+          content: response.decryptedResponse,
+          timestamp: new Date(),
+          simulated: !response.success
         };
         
-        setMessages((prev) => [...prev, encryptedMessage]);
-        setTimeout(() => setCurrentStep(3), 800);
-        
-        // Step 3: Process in TEE (waiting)
-        setTimeout(() => setCurrentStep(4), 1600);
-        
-        // Step 4: Get encrypted response
-        const encryptedResponseMessage: Message = {
-          role: "encrypted",
-          content: response.encryptedResponse,
-          timestamp: new Date()
-        };
-        
-        setMessages((prev) => [...prev, encryptedResponseMessage]);
-        setTimeout(() => setCurrentStep(5), 800);
-        
-        // Step 5: Decrypt response with Key B (private)
-        setTimeout(() => {
-          const assistantMessage: Message = {
-            role: "assistant",
-            content: response.decryptedResponse,
-            timestamp: new Date()
-          };
-          
-          setMessages((prev) => [...prev, assistantMessage]);
-          setCurrentStep(0);
-          setIsLoading(false);
-        }, 800);
-      } else {
-        toast.error(response.message || "Failed to process message");
+        setMessages((prev) => [...prev, assistantMessage]);
         setCurrentStep(0);
         setIsLoading(false);
-      }
+        
+        if (!response.success) {
+          toast.error(response.message || "Failed to process message");
+        }
+      }, 800);
     } catch (error) {
       console.error("Error sending message:", error);
+      
+      // Add simulated encrypted messages to maintain flow
+      const encryptedMessage: Message = {
+        role: "encrypted",
+        content: "[Encrypted Prompt - Simulation]",
+        timestamp: new Date(),
+        simulated: true
+      };
+      
+      const encryptedResponseMessage: Message = {
+        role: "encrypted",
+        content: "[Encrypted Response - Simulation]",
+        timestamp: new Date(),
+        simulated: true
+      };
+      
+      const errorMessage: Message = {
+        role: "assistant",
+        content: "I'm sorry, I couldn't process your message due to a technical error. Please try again later.",
+        timestamp: new Date(),
+        simulated: true
+      };
+      
+      setMessages((prev) => [...prev, encryptedMessage, encryptedResponseMessage, errorMessage]);
       toast.error("Error sending message. Please try again.");
       setCurrentStep(0);
       setIsLoading(false);
@@ -149,6 +189,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
                 role={message.role}
                 content={message.content}
                 timestamp={message.timestamp}
+                simulated={message.simulated}
               />
             ))}
             <div ref={messagesEndRef} />
@@ -159,12 +200,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Type your message..."
-              disabled={!readyToChat || isLoading}
+              disabled={isLoading}
               className="flex-1"
             />
             <Button 
               type="submit" 
-              disabled={!readyToChat || isLoading || !inputValue.trim()}
+              disabled={isLoading || !inputValue.trim()}
             >
               {isLoading ? (
                 <RefreshCw className="h-4 w-4 animate-spin" />

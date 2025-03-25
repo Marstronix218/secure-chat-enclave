@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
 
 const Index = () => {
-  const [isChatReady, setIsChatReady] = useState(true); // Changed to true to allow chat immediately
+  const [isChatReady, setIsChatReady] = useState(true); // Always true to allow immediate chat
   const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   
   // Simulate checking if keys are set up correctly
