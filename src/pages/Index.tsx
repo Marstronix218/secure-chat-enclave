@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
 
 const Index = () => {
-  const [isChatReady, setIsChatReady] = useState(false);
+  const [isChatReady, setIsChatReady] = useState(true); // Changed to true to allow chat immediately
   const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   
   // Simulate checking if keys are set up correctly
@@ -63,7 +63,7 @@ const Index = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="lg:col-span-3 bg-white rounded-lg shadow-subtle overflow-hidden h-[calc(100vh-11rem)]"
           >
-            <ChatInterface readyToChat={true} />
+            <ChatInterface readyToChat={isChatReady} />
           </motion.div>
         </div>
       </main>
