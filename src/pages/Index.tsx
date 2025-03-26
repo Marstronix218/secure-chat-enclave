@@ -42,7 +42,7 @@ const Index = () => {
           <Alert className="mb-4">
             <InfoIcon className="h-4 w-4 mr-2" />
             <AlertDescription>
-              This demo is using a remote API server. All keys are temporary and will be deleted periodically.
+              This demo is using a remote API server.
             </AlertDescription>
           </Alert>
         )}
