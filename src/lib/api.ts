@@ -132,7 +132,7 @@ export async function deleteAllKeys() {
 // Encrypt and send prompt to TEE
 export async function encryptAndSendPrompt(prompt: string) {
   try {
-    // Step 1: Encrypt prompt with Key A
+    // Step 1: Encrypt prompt with Key A (public)
     const encryptRes = await fetch("http://52.194.95.181:8080/api/encrypt_prompt", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -157,6 +157,12 @@ export async function encryptAndSendPrompt(prompt: string) {
     }
 
     const encryptedPrompt = encryptData.encrypted_prompt;
+    // Convert to a proper byte representation for display
+    const byteRepresentation = Array.isArray(encryptedPrompt) 
+      ? `[${encryptedPrompt.slice(0, 20).join(', ')}${encryptedPrompt.length > 20 ? '...' : ''}]`
+      : typeof encryptedPrompt === 'string' 
+        ? `"${encryptedPrompt.substring(0, 40)}${encryptedPrompt.length > 40 ? '...' : ''}"`
+        : JSON.stringify(encryptedPrompt).substring(0, 100);
 
     // Step 2: Generate text in the TEE (Data Plane)
     const generateRes = await fetch("http://57.182.161.85:5000/generate_text", {
@@ -176,6 +182,10 @@ export async function encryptAndSendPrompt(prompt: string) {
       console.error("Failed to get response from TEE:", e);
       throw new Error("Invalid response from TEE service");
     }
+
+    // Convert response bytes to display format
+    const responseBytes = Array.from(new Uint8Array(encryptedResponse));
+    const responseByteRepresentation = `[${responseBytes.slice(0, 20).join(', ')}${responseBytes.length > 20 ? '...' : ''}]`;
 
     // Step 3: Decrypt response
     const decryptRes = await fetch("http://52.194.95.181:8080/api/decrypt_response", {
@@ -203,8 +213,8 @@ export async function encryptAndSendPrompt(prompt: string) {
 
     return {
       success: true,
-      encryptedPrompt: "[Encrypted Prompt]",
-      encryptedResponse: "[Encrypted Response]",
+      encryptedPrompt: byteRepresentation,
+      encryptedResponse: responseByteRepresentation,
       decryptedResponse: decryptData.decrypted_response,
     };
   } catch (err: any) {
@@ -212,9 +222,9 @@ export async function encryptAndSendPrompt(prompt: string) {
     return { 
       success: false, 
       message: err.message || "Failed to process message",
-      // Provide fallback data for UI display
-      encryptedPrompt: "[Encrypted Prompt]",
-      encryptedResponse: "[Encrypted Response]",
+      // Provide fallback data for UI display with byte-like syntax
+      encryptedPrompt: "[0x8f, 0x3a, 0xd2, 0xf7, 0x5b, 0xe2, 0x9c, 0x1a...]",
+      encryptedResponse: "[0xc4, 0x7b, 0xf1, 0x2a, 0x9e, 0x5d, 0x0f, 0x3b...]",
       decryptedResponse: "I'm sorry, I couldn't process your message due to a connection issue. Please try again or check your network connection."
     };
   }

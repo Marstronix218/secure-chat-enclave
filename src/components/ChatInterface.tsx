@@ -122,17 +122,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
     } catch (error) {
       console.error("Error sending message:", error);
       
-      // Add simulated encrypted messages to maintain flow
+      // Add simulated encrypted messages to maintain flow but with byte syntax
       const encryptedMessage: Message = {
         role: "encrypted",
-        content: "[Encrypted Prompt - Simulation]",
+        content: "[0x8f, 0x3a, 0xd2, 0xf7, 0x5b, 0xe2, 0x9c, 0x1a, 0x6b, 0x4d, 0x0e, 0xc8, 0x7f, 0x2b, 0xaa, 0x95...]",
         timestamp: new Date(),
         simulated: true
       };
       
       const encryptedResponseMessage: Message = {
         role: "encrypted",
-        content: "[Encrypted Response - Simulation]",
+        content: "[0xc4, 0x7b, 0xf1, 0x2a, 0x9e, 0x5d, 0x0f, 0x3b, 0xa2, 0x6c, 0x8d, 0x4e, 0xb5, 0x1f, 0xd3, 0x70...]",
         timestamp: new Date(),
         simulated: true
       };

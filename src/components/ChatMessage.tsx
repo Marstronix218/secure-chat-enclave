@@ -26,7 +26,7 @@ const roleLabels = {
 };
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ role, content, timestamp, simulated }) => {
-  const isCode = role === "encrypted";
+  const isEncrypted = role === "encrypted";
   
   const getMessageStyles = () => {
     switch (role) {
@@ -74,8 +74,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ role, content, timestamp, sim
         </div>
       </div>
       
-      {isCode ? (
-        <pre className="p-3 bg-black/5 rounded overflow-x-auto">
+      {isEncrypted ? (
+        <pre className="p-3 bg-black/10 rounded overflow-x-auto text-orange-900 text-xs leading-relaxed">
           <code>{content}</code>
         </pre>
       ) : (
