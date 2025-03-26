@@ -36,17 +36,17 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
 
   const handleCreateKeyDirectory = async () => {
     setIsLoading(true);
-    setLoadingAction("Creating key directory");
+    setLoadingAction("鍵ディレクトリを作成中");
     try {
       const result = await createKeyDirectory();
       if (result.success) {
         setIsKeyDirCreated(true);
-        toast.success("Key directory created successfully");
+        toast.success("鍵ディレクトリが正常に作成されました");
       } else {
         toast.error(result.message);
       }
     } catch (error) {
-      toast.error("Failed to create key directory");
+      toast.error("鍵ディレクトリの作成に失敗しました");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -56,17 +56,17 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
 
   const handleRetrieveServerKey = async () => {
     setIsLoading(true);
-    setLoadingAction("Retrieving server key");
+    setLoadingAction("サーバー鍵を取得中");
     try {
       const result = await retrieveServerKey();
       if (result.success) {
         setIsServerKeyRetrieved(true);
-        toast.success("Server key retrieved successfully");
+        toast.success("サーバー鍵が正常に取得されました");
       } else {
         toast.error(result.message);
       }
     } catch (error) {
-      toast.error("Failed to retrieve server key");
+      toast.error("サーバー鍵の取得に失敗しました");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -76,17 +76,17 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
 
   const handleGenerateKeyA = async () => {
     setIsLoading(true);
-    setLoadingAction("Generating Key A");
+    setLoadingAction("鍵Aを生成中");
     try {
       const result = await generateKey("key_a");
       if (result.success) {
         setIsKeyAGenerated(true);
-        toast.success("Key A generated successfully");
+        toast.success("鍵Aが正常に生成されました");
       } else {
         toast.error(result.message);
       }
     } catch (error) {
-      toast.error("Failed to generate Key A");
+      toast.error("鍵Aの生成に失敗しました");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -96,17 +96,17 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
 
   const handleGenerateKeyB = async () => {
     setIsLoading(true);
-    setLoadingAction("Generating Key B");
+    setLoadingAction("鍵Bを生成中");
     try {
       const result = await generateKey("key_b");
       if (result.success) {
         setIsKeyBGenerated(true);
-        toast.success("Key B generated successfully");
+        toast.success("鍵Bが正常に生成されました");
       } else {
         toast.error(result.message);
       }
     } catch (error) {
-      toast.error("Failed to generate Key B");
+      toast.error("鍵Bの生成に失敗しました");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -116,17 +116,17 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
 
   const handleEncryptKeyA = async () => {
     setIsLoading(true);
-    setLoadingAction("Encrypting Key A");
+    setLoadingAction("鍵Aを暗号化中");
     try {
       const result = await encryptKeyA();
       if (result.success) {
         setIsKeyAEncrypted(true);
-        toast.success("Key A encrypted successfully");
+        toast.success("鍵Aが正常に暗号化されました");
       } else {
         toast.error(result.message);
       }
     } catch (error) {
-      toast.error("Failed to encrypt Key A");
+      toast.error("鍵Aの暗号化に失敗しました");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -136,17 +136,17 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
 
   const handleSendEncryptedKeyA = async () => {
     setIsLoading(true);
-    setLoadingAction("Sending encrypted Key A");
+    setLoadingAction("暗号化された鍵Aを送信中");
     try {
       const result = await sendEncryptedKeyA();
       if (result.success) {
         setIsKeyASent(true);
-        toast.success("Encrypted Key A sent successfully");
+        toast.success("暗号化された鍵Aが正常に送信されました");
       } else {
         toast.error(result.message);
       }
     } catch (error) {
-      toast.error("Failed to send encrypted Key A");
+      toast.error("暗号化された鍵Aの送信に失敗しました");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -156,17 +156,17 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
 
   const handleSendKeyB = async () => {
     setIsLoading(true);
-    setLoadingAction("Sending Key B");
+    setLoadingAction("鍵Bを送信中");
     try {
       const result = await sendPublicKeyB();
       if (result.success) {
         setIsKeyBSent(true);
-        toast.success("Key B sent successfully");
+        toast.success("鍵Bが正常に送信されました");
       } else {
         toast.error(result.message);
       }
     } catch (error) {
-      toast.error("Failed to send Key B");
+      toast.error("鍵Bの送信に失敗しました");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -176,19 +176,19 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
 
   const handleDeleteKeyA = async () => {
     setIsLoading(true);
-    setLoadingAction("Deleting Key A");
+    setLoadingAction("鍵Aを削除中");
     try {
       const result = await deleteKey("key_a");
       if (result.success) {
         setIsKeyAGenerated(false);
         setIsKeyAEncrypted(false);
         setIsKeyASent(false);
-        toast.success("Key A deleted successfully");
+        toast.success("鍵Aが正常に削除されました");
       } else {
         toast.error(result.message);
       }
     } catch (error) {
-      toast.error("Failed to delete Key A");
+      toast.error("鍵Aの削除に失敗しました");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -198,7 +198,7 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
 
   const handleDeleteAllKeys = async () => {
     setIsLoading(true);
-    setLoadingAction("Deleting all keys");
+    setLoadingAction("すべての鍵を削除中");
     try {
       const result = await deleteAllKeys();
       if (result.success) {
@@ -209,12 +209,12 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
         setIsKeyAEncrypted(false);
         setIsKeyASent(false);
         setIsKeyBSent(false);
-        toast.success("All keys deleted successfully");
+        toast.success("すべての鍵が正常に削除されました");
       } else {
         toast.error(result.message);
       }
     } catch (error) {
-      toast.error("Failed to delete all keys");
+      toast.error("すべての鍵の削除に失敗しました");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -224,15 +224,15 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
 
   const handleClearChat = () => {
     onClearChat();
-    toast.success("Chat history cleared");
+    toast.success("チャット履歴が消去されました");
   };
 
   return (
     <div className="h-full flex flex-col bg-sidebar rounded-lg overflow-hidden shadow-subtle">
       <div className="p-4 border-b border-sidebar-border">
-        <h2 className="text-xl font-medium tracking-tight">Key Management</h2>
+        <h2 className="text-xl font-medium tracking-tight">鍵管理</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Manage cryptographic keys for secure communication
+          セキュア通信のための暗号鍵を管理
         </p>
       </div>
 
@@ -240,7 +240,7 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
         <AnimatedContainer delay={0.1}>
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-muted-foreground">
-              Environment Setup
+              環境設定
             </h3>
             <div className="space-y-2">
               <Button
@@ -255,10 +255,10 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
                 ) : (
                   <FolderPlus className="h-4 w-4 mr-2" />
                 )}
-                {isLoading && loadingAction === "Creating key directory" ? (
+                {isLoading && loadingAction === "鍵ディレクトリを作成中" ? (
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                 ) : null}
-                Create Key Directory
+                鍵ディレクトリを作成
               </Button>
 
               <Button
@@ -273,10 +273,10 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
                 ) : (
                   <Download className="h-4 w-4 mr-2" />
                 )}
-                {isLoading && loadingAction === "Retrieving server key" ? (
+                {isLoading && loadingAction === "サーバー鍵を取得中" ? (
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                 ) : null}
-                Retrieve Server Key
+                サーバー鍵を取得
               </Button>
             </div>
           </div>
@@ -287,7 +287,7 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
         <AnimatedContainer delay={0.2}>
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-muted-foreground">
-              Key A Management
+              鍵A管理
             </h3>
             <div className="space-y-2">
               <Button
@@ -302,10 +302,10 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
                 ) : (
                   <Key className="h-4 w-4 mr-2" />
                 )}
-                {isLoading && loadingAction === "Generating Key A" ? (
+                {isLoading && loadingAction === "鍵Aを生成中" ? (
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                 ) : null}
-                Generate Key A
+                鍵Aを生成
               </Button>
 
               <AnimatePresence>
@@ -329,10 +329,10 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
                       ) : (
                         <Key className="h-4 w-4 mr-2" />
                       )}
-                      {isLoading && loadingAction === "Encrypting Key A" ? (
+                      {isLoading && loadingAction === "鍵Aを暗号化中" ? (
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                       ) : null}
-                      Encrypt Key A (Private)
+                      鍵A（秘密）を暗号化
                     </Button>
 
                     <Button
@@ -347,10 +347,10 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
                       ) : (
                         <Send className="h-4 w-4 mr-2" />
                       )}
-                      {isLoading && loadingAction === "Sending encrypted Key A" ? (
+                      {isLoading && loadingAction === "暗号化された鍵Aを送信中" ? (
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                       ) : null}
-                      Send Encrypted Key A
+                      暗号化された鍵Aを送信
                     </Button>
 
                     <Button
@@ -361,10 +361,10 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
                       disabled={!isKeyAGenerated || isLoading}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
-                      {isLoading && loadingAction === "Deleting Key A" ? (
+                      {isLoading && loadingAction === "鍵Aを削除中" ? (
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                       ) : null}
-                      Delete Key A (Private)
+                      鍵A（秘密）を削除
                     </Button>
                   </motion.div>
                 )}
@@ -378,7 +378,7 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
         <AnimatedContainer delay={0.3}>
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-muted-foreground">
-              Key B Management
+              鍵B管理
             </h3>
             <div className="space-y-2">
               <Button
@@ -393,10 +393,10 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
                 ) : (
                   <Key className="h-4 w-4 mr-2" />
                 )}
-                {isLoading && loadingAction === "Generating Key B" ? (
+                {isLoading && loadingAction === "鍵Bを生成中" ? (
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                 ) : null}
-                Generate Key B
+                鍵Bを生成
               </Button>
 
               <AnimatePresence>
@@ -420,10 +420,10 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
                       ) : (
                         <Upload className="h-4 w-4 mr-2" />
                       )}
-                      {isLoading && loadingAction === "Sending Key B" ? (
+                      {isLoading && loadingAction === "鍵Bを送信中" ? (
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                       ) : null}
-                      Send Key B (Public) to TEE
+                      鍵B（公開）をTEEに送信
                     </Button>
                   </motion.div>
                 )}
@@ -437,7 +437,7 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
         <AnimatedContainer delay={0.4}>
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-muted-foreground">
-              Cleanup Actions
+              クリーンアップ
             </h3>
             <div className="space-y-2">
               <Button
@@ -448,10 +448,10 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
                 disabled={!isKeyDirCreated || isLoading}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                {isLoading && loadingAction === "Deleting all keys" ? (
+                {isLoading && loadingAction === "すべての鍵を削除中" ? (
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                 ) : null}
-                Delete All Keys
+                すべての鍵を削除
               </Button>
 
               <Button
@@ -462,7 +462,7 @@ const KeyManagement: React.FC<KeyManagementProps> = ({ onClearChat }) => {
                 disabled={isLoading}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Clear Chat History
+                チャット履歴を消去
               </Button>
             </div>
           </div>

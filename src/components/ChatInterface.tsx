@@ -34,7 +34,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
       setMessages([
         {
           role: "assistant",
-          content: "Hello! I'm your secure TEE-protected assistant. How can I help you today?",
+          content: "こんにちは！私はセキュアなTEE保護アシスタントです。今日はどのようにお手伝いできますか？",
           timestamp: new Date(),
           simulated: false
         }
@@ -56,7 +56,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
     if (!inputValue.trim()) return;
     
     if (!readyToChat) {
-      toast.error("Please complete the key setup before chatting");
+      toast.error("チャットを開始する前に鍵の設定を完了してください");
       return;
     }
     
@@ -116,7 +116,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
         setIsLoading(false);
         
         if (!response.success) {
-          toast.error(response.message || "Failed to process message");
+          toast.error(response.message || "メッセージの処理に失敗しました");
         }
       }, 800);
     } catch (error) {
@@ -139,13 +139,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
       
       const errorMessage: Message = {
         role: "assistant",
-        content: "I'm sorry, I couldn't process your message due to a technical error. Please try again later.",
+        content: "申し訳ありませんが、技術的なエラーのためメッセージを処理できませんでした。後でもう一度お試しください。",
         timestamp: new Date(),
         simulated: true
       };
       
       setMessages((prev) => [...prev, encryptedMessage, encryptedResponseMessage, errorMessage]);
-      toast.error("Error sending message. Please try again.");
+      toast.error("メッセージの送信中にエラーが発生しました。もう一度お試しください。");
       setCurrentStep(0);
       setIsLoading(false);
     }
@@ -154,9 +154,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b">
-        <h2 className="text-xl font-medium tracking-tight">Secure Chat</h2>
+        <h2 className="text-xl font-medium tracking-tight">セキュアチャット</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          End-to-end encrypted communication
+          エンドツーエンド暗号化通信
         </p>
       </div>
 
@@ -174,10 +174,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
                   <div className="w-16 h-16 mb-4 rounded-full bg-blue-50 flex items-center justify-center">
                     <Lock className="w-8 h-8 text-blue-500" />
                   </div>
-                  <h3 className="text-lg font-medium mb-2">Secure Enclave Chat</h3>
+                  <h3 className="text-lg font-medium mb-2">セキュアエンクレーブチャット</h3>
                   <p className="text-muted-foreground text-sm max-w-md">
-                    Your messages are encrypted with RSA and processed in a Trusted Execution Environment, 
-                    ensuring end-to-end security.
+                    メッセージはRSAで暗号化され、信頼された実行環境で処理されるため、エンドツーエンドのセキュリティが確保されます。
                   </p>
                 </motion.div>
               )}
@@ -199,7 +198,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
             <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Type your message..."
+              placeholder="メッセージを入力..."
               disabled={isLoading}
               className="flex-1"
             />
@@ -212,54 +211,54 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              <span className="ml-2">Send</span>
+              <span className="ml-2">送信</span>
             </Button>
           </form>
         </div>
 
         <AnimatedContainer className="h-full bg-white rounded-lg border p-4 overflow-y-auto">
-          <h3 className="text-sm font-medium mb-3">TEE Processing</h3>
+          <h3 className="text-sm font-medium mb-3">TEE処理</h3>
           
           <div className="space-y-1">
             <ProcessingStep
               step={1}
               currentStep={currentStep}
-              text="Encrypting prompt with Key A (public)"
+              text="鍵A（公開）でプロンプトを暗号化"
               isCompleted={currentStep > 1}
             />
             
             <ProcessingStep
               step={2}
               currentStep={currentStep}
-              text="Sending encrypted prompt to TEE"
+              text="暗号化されたプロンプトをTEEに送信"
               isCompleted={currentStep > 2}
             />
             
             <ProcessingStep
               step={3}
               currentStep={currentStep}
-              text="Decrypting prompt in TEE with Key A (private)"
+              text="TEE内で鍵A（秘密）を使用してプロンプトを復号化"
               isCompleted={currentStep > 3}
             />
             
             <ProcessingStep
               step={4}
               currentStep={currentStep}
-              text="Generating response in TEE"
+              text="TEE内で応答を生成"
               isCompleted={currentStep > 4}
             />
             
             <ProcessingStep
               step={5}
               currentStep={currentStep}
-              text="Encrypting response with Key B (public)"
+              text="鍵B（公開）で応答を暗号化"
               isCompleted={currentStep > 5}
             />
             
             <ProcessingStep
               step={6}
               currentStep={currentStep}
-              text="Decrypting response with Key B (private)"
+              text="鍵B（秘密）で応答を復号化"
               isCompleted={currentStep > 6}
             />
           </div>

@@ -19,13 +19,13 @@ const Index = () => {
     
     // Show environment information
     if (!isDevelopment) {
-      toast.info("Running in production mode with remote API server");
+      toast.info("本番モードでリモートAPIサーバーを使用しています");
     }
   }, [isDevelopment]);
   
   const handleClearChat = () => {
     // This would be handled by the ChatInterface
-    toast.success("Chat history cleared");
+    toast.success("チャット履歴が消去されました");
   };
 
   return (
@@ -42,7 +42,7 @@ const Index = () => {
           <Alert className="mb-4">
             <InfoIcon className="h-4 w-4 mr-2" />
             <AlertDescription>
-              This demo is using a remote API server.
+              このデモはリモートAPIサーバーを使用しています。
             </AlertDescription>
           </Alert>
         )}

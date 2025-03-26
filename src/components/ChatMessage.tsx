@@ -19,10 +19,10 @@ const roleIcons = {
 };
 
 const roleLabels = {
-  user: "You",
-  assistant: "Assistant",
-  encrypted: "Encrypted",
-  decrypted: "Decrypted"
+  user: "あなた",
+  assistant: "アシスタント",
+  encrypted: "暗号化",
+  decrypted: "復号化"
 };
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ role, content, timestamp, simulated }) => {
@@ -64,7 +64,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ role, content, timestamp, sim
             {simulated && (
               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
                 <AlertTriangle className="h-3 w-3 mr-1" />
-                Simulated
+                シミュレーション
               </span>
             )}
           </div>
