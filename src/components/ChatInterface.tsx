@@ -1,14 +1,11 @@
 
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { toast } from "@/lib/toast";
-import { Send, RefreshCw, Lock } from "lucide-react";
-import ChatMessage from "./ChatMessage";
-import ProcessingStep from "./ProcessingStep";
 import { encryptAndSendPrompt } from "@/lib/api";
-import AnimatedContainer from "./AnimatedContainer";
+import ChatHeader from "./ChatHeader";
+import ChatMessageList from "./ChatMessageList";
+import ProcessingPanel from "./ProcessingPanel";
+import ChatInputForm from "./ChatInputForm";
 
 export interface Message {
   role: "user" | "assistant" | "encrypted" | "decrypted";
@@ -27,10 +24,8 @@ export type ChatInterfaceRef = {
 
 const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ readyToChat }, ref) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Expose the clearAllMessages method via ref
   useImperativeHandle(ref, () => ({
@@ -53,19 +48,7 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ readyT
     }
   }, [messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!inputValue.trim()) return;
-    
+  const handleSendMessage = async (inputValue: string) => {
     if (!readyToChat) {
       toast.error("チャットを開始する前に鍵の設定を完了してください");
       return;
@@ -78,7 +61,6 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ readyT
     };
     
     setMessages((prev) => [...prev, userMessage]);
-    setInputValue("");
     setIsLoading(true);
     setCurrentStep(1);
     
@@ -172,116 +154,18 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ readyT
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
-        <h2 className="text-xl font-medium tracking-tight">セキュアチャット</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          エンドツーエンド暗号化通信
-        </p>
-      </div>
+      <ChatHeader />
 
       <div className="flex-1 overflow-hidden grid grid-cols-3 gap-4 p-4">
         <div className="col-span-2 flex flex-col h-full overflow-hidden">
-          <div className="flex-1 overflow-y-auto pr-2">
-            <AnimatePresence>
-              {messages.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="h-full flex flex-col items-center justify-center text-center p-6"
-                >
-                  <div className="w-16 h-16 mb-4 rounded-full bg-blue-50 flex items-center justify-center">
-                    <Lock className="w-8 h-8 text-blue-500" />
-                  </div>
-                  <h3 className="text-lg font-medium mb-2">セキュアエンクレーブチャット</h3>
-                  <p className="text-muted-foreground text-sm max-w-md">
-                    メッセージはRSAで暗号化され、信頼された実行環境で処理されるため、エンドツーエンドのセキュリティが確保されます。
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {messages.map((message, index) => (
-              <ChatMessage
-                key={index}
-                role={message.role}
-                content={message.content}
-                timestamp={message.timestamp}
-                simulated={message.simulated}
-              />
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-
-          <form onSubmit={handleSendMessage} className="mt-4 flex space-x-2">
-            <Input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="メッセージを入力..."
-              disabled={isLoading}
-              className="flex-1"
-            />
-            <Button 
-              type="submit" 
-              disabled={isLoading || !inputValue.trim()}
-            >
-              {isLoading ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-              <span className="ml-2">送信</span>
-            </Button>
-          </form>
+          <ChatMessageList messages={messages} />
+          <ChatInputForm 
+            isLoading={isLoading}
+            onSendMessage={handleSendMessage}
+          />
         </div>
 
-        <AnimatedContainer className="h-full bg-white rounded-lg border p-4 overflow-y-auto">
-          <h3 className="text-sm font-medium mb-3">TEE処理</h3>
-          
-          <div className="space-y-1">
-            <ProcessingStep
-              step={1}
-              currentStep={currentStep}
-              text="鍵A（公開）でプロンプトを暗号化"
-              isCompleted={currentStep > 1}
-            />
-            
-            <ProcessingStep
-              step={2}
-              currentStep={currentStep}
-              text="暗号化されたプロンプトをTEEに送信"
-              isCompleted={currentStep > 2}
-            />
-            
-            <ProcessingStep
-              step={3}
-              currentStep={currentStep}
-              text="TEE内で鍵A（秘密）を使用してプロンプトを復号化"
-              isCompleted={currentStep > 3}
-            />
-            
-            <ProcessingStep
-              step={4}
-              currentStep={currentStep}
-              text="TEE内で応答を生成"
-              isCompleted={currentStep > 4}
-            />
-            
-            <ProcessingStep
-              step={5}
-              currentStep={currentStep}
-              text="鍵B（公開）で応答を暗号化"
-              isCompleted={currentStep > 5}
-            />
-            
-            <ProcessingStep
-              step={6}
-              currentStep={currentStep}
-              text="鍵B（秘密）で応答を復号化"
-              isCompleted={currentStep > 6}
-            />
-          </div>
-        </AnimatedContainer>
+        <ProcessingPanel currentStep={currentStep} />
       </div>
     </div>
   );
@@ -290,4 +174,3 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ readyT
 ChatInterface.displayName = "ChatInterface";
 
 export default ChatInterface;
-
