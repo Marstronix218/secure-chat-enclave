@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import KeyManagement from "@/components/KeyManagement";
-import ChatInterface from "@/components/ChatInterface";
+import ChatInterface, { ChatInterfaceRef } from "@/components/ChatInterface";
 import { toast } from "@/lib/toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
@@ -11,6 +11,7 @@ import { InfoIcon } from "lucide-react";
 const Index = () => {
   const [isChatReady, setIsChatReady] = useState(true); // Always true to allow immediate chat
   const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const chatInterfaceRef = useRef<ChatInterfaceRef>(null);
   
   // Simulate checking if keys are set up correctly
   useEffect(() => {
@@ -24,7 +25,10 @@ const Index = () => {
   }, [isDevelopment]);
   
   const handleClearChat = () => {
-    // This would be handled by the ChatInterface
+    // Clear messages in ChatInterface component
+    if (chatInterfaceRef.current) {
+      chatInterfaceRef.current.clearAllMessages();
+    }
     toast.success("チャット履歴が消去されました");
   };
 
@@ -63,7 +67,10 @@ const Index = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="lg:col-span-3 bg-white rounded-lg shadow-subtle overflow-hidden h-[calc(100vh-11rem)]"
           >
-            <ChatInterface readyToChat={isChatReady} />
+            <ChatInterface 
+              readyToChat={isChatReady} 
+              ref={chatInterfaceRef}
+            />
           </motion.div>
         </div>
       </main>

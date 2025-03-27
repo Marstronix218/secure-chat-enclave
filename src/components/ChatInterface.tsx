@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,14 +21,25 @@ interface ChatInterfaceProps {
   readyToChat: boolean;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
+export type ChatInterfaceRef = {
+  clearAllMessages: () => void;
+};
+
+const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ readyToChat }, ref) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Add a welcome message when the component loads
+  // Expose the clearAllMessages method via ref
+  useImperativeHandle(ref, () => ({
+    clearAllMessages: () => {
+      setMessages([]);
+    }
+  }));
+
+  // Add a welcome message when the component loads or messages are cleared
   useEffect(() => {
     if (messages.length === 0) {
       setMessages([
@@ -40,7 +51,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
         }
       ]);
     }
-  }, []);
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -266,6 +277,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ readyToChat }) => {
       </div>
     </div>
   );
-};
+});
+
+ChatInterface.displayName = "ChatInterface";
 
 export default ChatInterface;
