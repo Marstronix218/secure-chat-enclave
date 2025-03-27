@@ -18,15 +18,27 @@ const roleIcons = {
   decrypted: <Lock className="h-5 w-5 text-green-500" />
 };
 
-const roleLabels = {
-  user: "あなた",
-  assistant: "アシスタント",
-  encrypted: "暗号化",
-  decrypted: "復号化"
-};
-
 const ChatMessage: React.FC<ChatMessageProps> = ({ role, content, timestamp, simulated }) => {
   const isEncrypted = role === "encrypted";
+  
+  // Check if this is a prompt or response based on the content pattern
+  const isPromptEncryption = isEncrypted && content.includes("[0x8f") || content.includes("[0xc4") === false;
+  
+  // Determine label based on role and encryption type
+  const getRoleLabel = () => {
+    switch (role) {
+      case "user":
+        return "あなた";
+      case "assistant":
+        return "アシスタント";
+      case "encrypted":
+        return isPromptEncryption ? "暗号化されたプロンプト" : "暗号化された応答";
+      case "decrypted":
+        return "復号化";
+      default:
+        return "未知";
+    }
+  };
   
   const getMessageStyles = () => {
     switch (role) {
@@ -60,7 +72,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ role, content, timestamp, sim
         </div>
         <div className="flex-1">
           <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">{roleLabels[role]}</p>
+            <p className="text-sm font-medium">{getRoleLabel()}</p>
             {simulated && (
               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
                 <AlertTriangle className="h-3 w-3 mr-1" />
