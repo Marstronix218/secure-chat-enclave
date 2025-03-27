@@ -84,37 +84,45 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ readyT
     
     try {
       // Step 1: Encrypt prompt with Key A (public)
-      setTimeout(() => setCurrentStep(2), 800);
+      setTimeout(() => {
+        setCurrentStep(2);
+        // Now add encrypted prompt message to chat after encryption step is shown
+        const encryptedMessage: Message = {
+          role: "encrypted",
+          content: "[0x8f, 0x3a, 0xd2, 0xf7, 0x5b, 0xe2, 0x9c, 0x1a, 0x6b, 0x4d, 0x0e, 0xc8, 0x7f, 0x2b, 0xaa, 0x95...]",
+          timestamp: new Date(),
+          simulated: true // Default to simulated until we get real data
+        };
+        setMessages((prev) => [...prev, encryptedMessage]);
+      }, 800);
       
       const response = await encryptAndSendPrompt(inputValue);
       
-      // Always show encrypted messages - either real or simulated
-      const encryptedMessage: Message = {
-        role: "encrypted",
-        content: response.encryptedPrompt,
-        timestamp: new Date(),
-        simulated: !response.success
-      };
+      // Step 2: Send encrypted prompt to TEE (already handled by step transition)
+      setTimeout(() => setCurrentStep(3), 1600);
       
-      setMessages((prev) => [...prev, encryptedMessage]);
-      setTimeout(() => setCurrentStep(3), 800);
+      // Step 3: Decrypt prompt in TEE with Key A (private)
+      setTimeout(() => setCurrentStep(4), 1000);
       
-      // Step 3: Process in TEE (waiting)
-      setTimeout(() => setCurrentStep(4), 1600);
+      // Step 4: Generate response in TEE
+      setTimeout(() => setCurrentStep(5), 1000);
       
-      // Step 4: Get encrypted response
-      const encryptedResponseMessage: Message = {
-        role: "encrypted",
-        content: response.encryptedResponse,
-        timestamp: new Date(),
-        simulated: !response.success
-      };
-      
-      setMessages((prev) => [...prev, encryptedResponseMessage]);
-      setTimeout(() => setCurrentStep(5), 800);
-      
-      // Step 5: Decrypt response with Key B (private)
+      // Step 5: Encrypt response with Key B (public)
       setTimeout(() => {
+        setCurrentStep(6);
+        // Now add encrypted response message to chat after encryption step
+        const encryptedResponseMessage: Message = {
+          role: "encrypted",
+          content: response.encryptedResponse || "[0xc4, 0x7b, 0xf1, 0x2a, 0x9e, 0x5d, 0x0f, 0x3b, 0xa2, 0x6c, 0x8d, 0x4e, 0xb5, 0x1f, 0xd3, 0x70...]",
+          timestamp: new Date(),
+          simulated: !response.success
+        };
+        setMessages((prev) => [...prev, encryptedResponseMessage]);
+      }, 1000);
+      
+      // Step 6: Decrypt response with Key B (private)
+      setTimeout(() => {
+        // Final step - add the decrypted assistant message
         const assistantMessage: Message = {
           role: "assistant",
           content: response.decryptedResponse,
@@ -129,7 +137,7 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ readyT
         if (!response.success) {
           toast.error(response.message || "メッセージの処理に失敗しました");
         }
-      }, 800);
+      }, 1000);
     } catch (error) {
       console.error("Error sending message:", error);
       
@@ -282,3 +290,4 @@ const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ readyT
 ChatInterface.displayName = "ChatInterface";
 
 export default ChatInterface;
+
